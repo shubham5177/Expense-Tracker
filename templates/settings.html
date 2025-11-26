@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Expense Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+    
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-wallet"></i>
+            <span>ExpenseTracker</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.dashboard') }}" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('dashboard.profile') }}" class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+            <a href="{{ url_for('settings.settings') }}" class="nav-item active">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+
+    
+    <main class="main-content">
+        
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>Settings</h1>
+            </div>
+            <div class="top-bar-right">
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <div class="user-info">
+                    <img src="{{ url_for('static', filename='uploads/profiles/' + user.photo) }}" alt="Profile" class="user-avatar">
+                    <span>{{ user.name }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-container">
+            
+            <div class="settings-card">
+                <h2><i class="fas fa-user"></i> Profile Settings</h2>
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label for="name">Full Name</label>
+                        <input type="text" id="name" value="{{ user.name }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Profile</button>
+                </form>
+            </div>
+
+            
+            <div class="settings-card">
+                <h2><i class="fas fa-camera"></i> Profile Photo</h2>
+                <div class="photo-upload">
+                    <img src="{{ url_for('static', filename='uploads/profiles/' + user.photo) }}" alt="Profile" class="profile-preview" id="photoPreview">
+                    <form id="photoForm">
+                        <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('photoInput').click()">
+                            <i class="fas fa-upload"></i> Choose Photo
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            
+            <div class="settings-card">
+                <h2><i class="fas fa-lock"></i> Change Password</h2>
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label for="currentPassword">Current Password</label>
+                        <input type="password" id="currentPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newPassword">New Password</label>
+                        <input type="password" id="newPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <input type="password" id="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Change Password</button>
+                </form>
+            </div>
+
+            
+            <div class="settings-card">
+                <h2><i class="fas fa-coins"></i> Currency Settings</h2>
+                <form id="currencyForm">
+                    <div class="form-group">
+                        <label for="currency">Preferred Currency</label>
+                        <select id="currency" required>
+                            <option value="₹" {% if user.currency == '₹' %}selected{% endif %}>₹ Indian Rupee (INR)</option>
+                            <option value="$" {% if user.currency == '$' %}selected{% endif %}>$ US Dollar (USD)</option>
+                            <option value="€" {% if user.currency == '€' %}selected{% endif %}>€ Euro (EUR)</option>
+                            <option value="£" {% if user.currency == '£' %}selected{% endif %}>£ British Pound (GBP)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Currency</button>
+                </form>
+            </div>
+
+            
+            <div class="settings-card">
+                <h2><i class="fas fa-palette"></i> Theme Settings</h2>
+                <div class="theme-options">
+                    <button class="theme-btn" id="lightThemeBtn">
+                        <i class="fas fa-sun"></i>
+                        <span>Light Mode</span>
+                    </button>
+                    <button class="theme-btn" id="darkThemeBtn">
+                        <i class="fas fa-moon"></i>
+                        <span>Dark Mode</span>
+                    </button>
+                </div>
+            </div>
+
+            
+            <div class="settings-card danger-zone">
+                <h2><i class="fas fa-exclamation-triangle"></i> Danger Zone</h2>
+                <p>Once you delete your account, there is no going back. Please be certain.</p>
+                <button class="btn btn-danger" id="deleteAccountBtn">Delete Account</button>
+            </div>
+        </div>
+    </main>
+
+    
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirm Account Deletion</h2>
+                <button class="modal-close" id="closeDeleteModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>This action cannot be undone. All your data will be permanently deleted.</p>
+                <form id="deleteForm">
+                    <div class="form-group">
+                        <label for="deletePassword">Enter your password to confirm</label>
+                        <input type="password" id="deletePassword" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancelDelete">Cancel</button>
+                        <button type="submit" class="btn btn-danger">Delete My Account</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="static/js/script.js"></script>
+    <script>
+        // Profile Update
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            
+            const response = await fetch('/api/settings/update-profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            
+            const data = await response.json();
+            alert(data.message || data.error);
+            if (response.ok) location.reload();
+        });
+
+        // Photo Upload
+        document.getElementById('photoInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('photo', file);
+            
+            const response = await fetch('/api/settings/upload-photo', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            alert(data.message || data.error);
+            if (response.ok) location.reload();
+        });
+
+        // Password Change
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            const response = await fetch('/api/settings/change-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
+            });
+            
+            const data = await response.json();
+            alert(data.message || data.error);
+            if (response.ok) {
+                document.getElementById('passwordForm').reset();
+            }
+        });
+
+        // Currency Change
+        document.getElementById('currencyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const currency = document.getElementById('currency').value;
+            
+            const response = await fetch('/api/settings/change-currency', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ currency })
+            });
+            
+            const data = await response.json();
+            alert(data.message || data.error);
+            if (response.ok) location.reload();
+        });
+
+        // Delete Account
+        document.getElementById('deleteAccountBtn').addEventListener('click', () => {
+            document.getElementById('deleteModal').classList.add('active');
+        });
+
+        document.getElementById('closeDeleteModal').addEventListener('click', () => {
+            document.getElementById('deleteModal').classList.remove('active');
+        });
+
+        document.getElementById('cancelDelete').addEventListener('click', () => {
+            document.getElementById('deleteModal').classList.remove('active');
+        });
+
+        document.getElementById('deleteForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('deletePassword').value;
+            
+            if (!confirm('Are you absolutely sure? This cannot be undone!')) return;
+            
+            const response = await fetch('/api/settings/delete-account', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            
+            const data = await response.json();
+            alert(data.message || data.error);
+            if (response.ok) {
+                window.location.href = '/';
+            }
+        });
+    </script>
+</body>
+</html>

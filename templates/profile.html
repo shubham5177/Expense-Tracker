@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Expense Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="dashboard-body">
+    
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <i class="fas fa-wallet"></i>
+            <span>ExpenseTracker</span>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('dashboard.dashboard') }}" class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('dashboard.profile') }}" class="nav-item active">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+            <a href="{{ url_for('settings.settings') }}" class="nav-item">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+
+    
+    <main class="main-content">
+        
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1>Profile</h1>
+            </div>
+            <div class="top-bar-right">
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <div class="user-info">
+                    <img src="{{ url_for('static', filename='uploads/profiles/' + user.photo) }}" alt="Profile" class="user-avatar">
+                    <span>{{ user.name }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-container">
+            
+            <div class="profile-header">
+                <div class="profile-avatar-large">
+                    <img src="{{ url_for('static', filename='uploads/profiles/' + user.photo) }}" alt="Profile">
+                </div>
+                <div class="profile-info">
+                    <h2>{{ user.name }}</h2>
+                    <p class="profile-email">
+                        <i class="fas fa-envelope"></i>
+                        {{ user.email }}
+                    </p>
+                    <p class="profile-joined">
+                        <i class="fas fa-calendar"></i>
+                        Member since {{ user.created_at[:10] }}
+                    </p>
+                    <a href="{{ url_for('settings.settings') }}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i>
+                        Edit Profile
+                    </a>
+                </div>
+            </div>
+
+            
+            <div class="profile-stats-grid">
+                <div class="profile-stat-card">
+                    <i class="fas fa-receipt"></i>
+                    <h3 id="totalExpenses">0</h3>
+                    <p>Total Expenses</p>
+                </div>
+                <div class="profile-stat-card">
+                    <i class="fas fa-wallet"></i>
+                    <h3 id="totalAmount">{{ user.currency }}0</h3>
+                    <p>Total Amount</p>
+                </div>
+                <div class="profile-stat-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3 id="avgExpense">{{ user.currency }}0</h3>
+                    <p>Average Expense</p>
+                </div>
+                <div class="profile-stat-card">
+                    <i class="fas fa-tags"></i>
+                    <h3 id="topCategory">-</h3>
+                    <p>Top Category</p>
+                </div>
+            </div>
+
+            
+            <div class="profile-card">
+                <h3><i class="fas fa-chart-pie"></i> Spending Habits</h3>
+                <div class="spending-habits">
+                    <div class="habit-item">
+                        <div class="habit-label">Most Active Day</div>
+                        <div class="habit-value" id="mostActiveDay">Loading...</div>
+                    </div>
+                    <div class="habit-item">
+                        <div class="habit-label">Average Daily Spending</div>
+                        <div class="habit-value" id="avgDaily">{{ user.currency }}0</div>
+                    </div>
+                    <div class="habit-item">
+                        <div class="habit-label">Preferred Currency</div>
+                        <div class="habit-value">{{ user.currency }}</div>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="profile-card">
+                <h3><i class="fas fa-info-circle"></i> Account Information</h3>
+                <div class="account-info">
+                    <div class="info-row">
+                        <span class="info-label">Account Status:</span>
+                        <span class="info-value">
+                            {% if user.verified %}
+                                <span class="badge badge-success">
+                                    <i class="fas fa-check-circle"></i> Verified
+                                </span>
+                            {% else %}
+                                <span class="badge badge-warning">
+                                    <i class="fas fa-exclamation-circle"></i> Not Verified
+                                </span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">User ID:</span>
+                        <span class="info-value">#{{ user.id }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Account Created:</span>
+                        <span class="info-value">{{ user.created_at }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="static/js/script.js"></script>
+    <script>
+        // Load profile stats
+        async function loadProfileStats() {
+            const response = await fetch('/api/expenses');
+            const data = await response.json();
+            const expenses = data.expenses;
+            
+            document.getElementById('totalExpenses').textContent = expenses.length;
+            
+            const totalAmount = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+            document.getElementById('totalAmount').textContent = '{{ user.currency }}' + totalAmount.toFixed(2);
+            
+            const avgExpense = expenses.length > 0 ? totalAmount / expenses.length : 0;
+            document.getElementById('avgExpense').textContent = '{{ user.currency }}' + avgExpense.toFixed(2);
+            
+            // Calculate top category
+            const categoryTotals = {};
+            expenses.forEach(exp => {
+                categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
+            });
+            
+            let topCategory = '-';
+            let maxAmount = 0;
+            for (const [cat, amount] of Object.entries(categoryTotals)) {
+                if (amount > maxAmount) {
+                    maxAmount = amount;
+                    topCategory = cat;
+                }
+            }
+            document.getElementById('topCategory').textContent = topCategory;
+            
+            // Calculate most active day
+            const dayCounts = {};
+            expenses.forEach(exp => {
+                const day = new Date(exp.date).toLocaleDateString('en-US', { weekday: 'long' });
+                dayCounts[day] = (dayCounts[day] || 0) + 1;
+            });
+            
+            let mostActiveDay = 'No data';
+            let maxCount = 0;
+            for (const [day, count] of Object.entries(dayCounts)) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    mostActiveDay = day;
+                }
+            }
+            document.getElementById('mostActiveDay').textContent = mostActiveDay;
+            
+            // Calculate average daily spending
+            if (expenses.length > 0) {
+                const dates = [...new Set(expenses.map(exp => exp.date))];
+                const avgDaily = totalAmount / dates.length;
+                document.getElementById('avgDaily').textContent = '{{ user.currency }}' + avgDaily.toFixed(2);
+            }
+        }
+        
+        loadProfileStats();
+    </script>
+</body>
+</html>
